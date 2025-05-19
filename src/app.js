@@ -36,7 +36,7 @@ app.use(cors({
 app.use(compression());
 
 // Logging HTTP requests
-app.use(morgan(config.server.env === 'development' ? 'dev' : 'combined'));
+app.use(morgan(config.env === 'development' ? 'dev' : 'combined'));
 
 // Rate limiting (apply to API routes only)
 app.use('/api', rateLimiter);
