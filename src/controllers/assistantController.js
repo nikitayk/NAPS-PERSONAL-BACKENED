@@ -1,16 +1,15 @@
 // src/controllers/assistantController.js
 
-const { Configuration, OpenAIApi } = require("openai");
+const OpenAI = require("openai");
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Add to your .env
 
 // Initialize OpenAI if key is present
 let openai = null;
 if (OPENAI_API_KEY) {
-  const configuration = new Configuration({
+  openai = new OpenAI({
     apiKey: OPENAI_API_KEY,
   });
-  openai = new OpenAIApi(configuration);
 }
 
 exports.handleAssistant = async (req, res) => {
@@ -40,7 +39,7 @@ User info: Name: ${userName}, Gems: ${user?.gems}, Streak: ${user?.streak}
 Respond in a concise, practical, and supportive way.
     `.trim();
 
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo", // or "gpt-4" if you have access
       messages: [
         { role: "system", content: "You are NAPS, a helpful financial assistant for students." },
@@ -50,11 +49,11 @@ Respond in a concise, practical, and supportive way.
       temperature: 0.7,
     });
 
-    const reply = completion.data.choices[0].message.content;
+    const reply = completion.choices[0].message.content;
     // Optionally log user messages and AI replies for analytics/support
     res.json({ reply });
   } catch (error) {
-    console.error("OpenAI error:", error.response?.data || error.message);
+    console.error("OpenAI error:", error?.response?.data || error.message);
     res.status(500).json({ reply: "Sorry, I couldn't connect to the assistant right now." });
   }
 };
