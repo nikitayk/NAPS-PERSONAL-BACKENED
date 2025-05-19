@@ -1,10 +1,19 @@
 // src/config/config.js
-require('dotenv').config();
+
+// Only load .env locally, not in production (Railway injects env vars)
+if (process.env.NODE_ENV !== 'production') require('dotenv').config();
+
 const { createLogger, format, transports } = require('winston');
 
 // Validate required environment variables in production
 if (process.env.NODE_ENV === 'production') {
-  const requiredEnvs = ['DATABASE_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
+  const requiredEnvs = [
+    'DATABASE_URI',
+    'JWT_SECRET',
+    'JWT_REFRESH_SECRET',
+    'EMAIL_API_KEY',
+    'FRAUD_API_KEY'
+  ];
   requiredEnvs.forEach(env => {
     if (!process.env[env]) throw new Error(`Missing required environment variable: ${env}`);
   });
@@ -13,7 +22,8 @@ if (process.env.NODE_ENV === 'production') {
 const config = {
   // Core Application Configuration
   env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT, 10) || 5000,
+  // Always use process.env.PORT (Railway sets this), fallback to 5000 locally
+  port: process.env.PORT ? parseInt(process.env.PORT, 10) : 5000,
   baseUrl: process.env.BASE_URL || 'http://localhost:5000',
 
   // Database Configuration (MongoDB)
@@ -36,7 +46,7 @@ const config = {
 
   // Fraud Detection Parameters
   fraudDetection: {
-    apiKey: process.env.FRAUD_API_KEY || 'dev-key', // Required in production
+    apiKey: process.env.FRAUD_API_KEY || 'dev-key',
     threshold: {
       highRisk: 0.8,
       mediumRisk: 0.5,
@@ -59,18 +69,24 @@ const config = {
     enabled: process.env.EMAIL_ENABLED === 'true',
     service: process.env.EMAIL_SERVICE || 'SendGrid',
     apiKey: process.env.EMAIL_API_KEY || 'dev-key',
-    fromAddress: process.env.EMAIL_FROM || 'noreply@naps.com',
+    fromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@naps.com',
+    smtp: {
+      host: process.env.EMAIL_SMTP_HOST || 'smtp.sendgrid.net',
+      port: process.env.EMAIL_SMTP_PORT ? parseInt(process.env.EMAIL_SMTP_PORT, 10) : 587,
+      user: process.env.EMAIL_SMTP_USER || 'apikey',
+      pass: process.env.EMAIL_SMTP_PASS || '',
+    },
     templates: {
-      verification: 'd-1234567890',
-      fraudAlert: 'd-0987654321',
+      verification: process.env.EMAIL_TEMPLATE_VERIFICATION || 'd-1234567890',
+      fraudAlert: process.env.EMAIL_TEMPLATE_FRAUD_ALERT || 'd-0987654321',
     },
   },
 
   // Rate Limiting
   rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000, // 15 minutes
+    windowMs: process.env.RATE_LIMIT_WINDOW_MS ? parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) : 15 * 60 * 1000,
     max: process.env.NODE_ENV === 'production' ? 100 : 1000,
-    redisUrl: process.env.REDIS_URL, // For production clustering
+    redisUrl: process.env.REDIS_URL,
   },
 
   // Logging Configuration
@@ -86,15 +102,15 @@ const config = {
       new transports.Console({
         format: format.combine(
           format.colorize(),
-          format.simple()
+          process.env.NODE_ENV === 'production' ? format.json() : format.simple()
         ),
       }),
-      new transports.File({ 
-        filename: 'logs/error.log', 
+      new transports.File({
+        filename: 'logs/error.log',
         level: 'error',
         handleExceptions: true,
       }),
-      new transports.File({ 
+      new transports.File({
         filename: 'logs/combined.log',
         handleRejections: true,
       }),
@@ -105,15 +121,15 @@ const config = {
   // Security Configuration
   security: {
     cors: {
-      origin: process.env.CORS_ORIGIN ? 
-        process.env.CORS_ORIGIN.split(',') : 
-        ['http://localhost:3000'],
+      origin: process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+        : ['http://localhost:3000'],
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
     },
     hsts: {
-      maxAge: 31536000, // 1 year in seconds
+      maxAge: 31536000,
       includeSubDomains: true,
       preload: true,
     },
@@ -130,7 +146,7 @@ const config = {
   // Redis Configuration
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,
     password: process.env.REDIS_PASSWORD,
   },
 };
@@ -143,4 +159,5 @@ if (config.env === 'production') {
 }
 
 module.exports = config;
+
 

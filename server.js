@@ -1,28 +1,29 @@
-// Load environment variables from .env file
-require('dotenv').config();
+// server.js
+
+// Only load .env for local development, not in production (Railway injects env vars)
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 // Import the Express app (all middleware, routes, and configs are set up in app.js)
 const app = require('./src/app');
-const config = require('./src/config/config');
 
-// Set port from config, environment, or default to 5000
-const PORT = config.port || process.env.PORT || 5000;
+// Always use the port provided by Railway (or fallback to 5000 locally)
+const PORT = process.env.PORT || 5000;
 
 // Start the server
 const server = app.listen(PORT, () => {
-  if (config.logger && typeof config.logger.info === 'function') {
-    config.logger.info(`Server running on port ${PORT}`);
-  } else {
-    console.log(`Server running on port ${PORT}`);
-  }
+  console.log(`Server running on port ${PORT}`);
 });
 
 // Graceful shutdown on unhandled errors
 process.on('unhandledRejection', (err) => {
-  if (config.logger && typeof config.logger.error === 'function') {
-    config.logger.error('Unhandled Rejection:', err);
-  } else {
-    console.error('Unhandled Rejection:', err);
-  }
+  console.error('Unhandled Rejection:', err);
   server.close(() => process.exit(1));
+});
+
+// Optional: Catch uncaught exceptions too (for extra safety)
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
 });
