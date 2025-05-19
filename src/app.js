@@ -17,7 +17,7 @@ const app = express();
 connectDB();
 
 // Trust first proxy (if behind reverse proxy like Nginx)
-if (config.server.env === 'production') {
+if (config.env === 'production') {
   app.set('trust proxy', 1);
 }
 
