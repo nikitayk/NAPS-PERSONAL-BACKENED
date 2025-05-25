@@ -1,3 +1,10 @@
+const { generateUUID } = require("../utils/uuidHelper");
+
+const newId = generateUUID();
+console.log("Generated UUID:", newId);
+
+// Example usage: creating a new transaction ID
+const transactionId = generateUUID();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 

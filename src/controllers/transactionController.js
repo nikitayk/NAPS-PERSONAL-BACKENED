@@ -1,3 +1,31 @@
+// At the top of the controller file
+const {
+  formatCurrency,
+  isValidStockSymbol,
+  sanitizeInput,
+  formatDateTime,
+} = require("../utils/dataHelpers");
+
+// Inside some controller function:
+function getStockData(req, res) {
+  const symbol = sanitizeInput(req.params.symbol);
+  if (!isValidStockSymbol(symbol)) {
+    return res.status(400).json({ error: "Invalid stock symbol" });
+  }
+
+  // Suppose you get price from DB or API
+  const price = 1234.56;
+  const formattedPrice = formatCurrency(price);
+
+  const currentTime = formatDateTime(new Date());
+
+  res.json({ symbol, price: formattedPrice, time: currentTime });
+}
+
+
+
+
+
 // src/controllers/transactionController.js
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');

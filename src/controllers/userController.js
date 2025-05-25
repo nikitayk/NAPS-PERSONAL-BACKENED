@@ -1,3 +1,26 @@
+const {
+  deepClone,
+  pickKeys,
+  omitEmpty,
+  deepMerge,
+  isEmptyObject,
+} = require("../utils/lodashHelpers");
+
+const user = { name: "Alice", age: null, email: "alice@example.com" };
+
+const cleanUser = omitEmpty(user); // { name: "Alice", email: "alice@example.com" }
+const clonedUser = deepClone(user);
+
+if (!isEmptyObject(cleanUser)) {
+  // do something
+}
+
+const merged = deepMerge({ a: 1 }, { b: 2, a: 3 });
+// merged = { a: 3, b: 2 }
+
+
+
+
 const User = require('../models/User');
 const { formatResponse } = require('../utils/helpers');
 
@@ -56,3 +79,31 @@ exports.listUsers = async (req, res, next) => {
     next(err);
   }
 };
+
+
+const { emailQueue } = require("../queues/JobQueues");
+
+exports.registerUser = async (req, res) => {
+  try {
+    // Your user registration logic here...
+
+    // After successful registration, add email job to queue
+    await emailQueue.add({
+      to: req.body.email,
+      subject: "Welcome to NAPS Finance!",
+      body: "Thank you for signing up to NAPS Finance.",
+    });
+
+    res.status(201).json({ message: "User registered and welcome email queued." });
+  } catch (error) {
+    res.status(500).json({ error: "Registration failed." });
+  }
+};
+
+const { generateUUID } = require("../utils/uuidHelper");
+
+const newId = generateUUID();
+console.log("Generated UUID:", newId);
+
+// Example usage: creating a new transaction ID
+const transactionId = generateUUID();
