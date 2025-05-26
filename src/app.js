@@ -9,28 +9,33 @@ const errorHandler = require('./middlewares/errorHandler');
 const config = require('./config/config');
 const connectDB = require('./config/db');
 const apiRoutes = require('./routes');
+const healthRoutes = require('./routes/health');
 const compression = require('compression'); // Added for performance
+const security = require('./middleware/security');
+const { initializeWebSocket, cleanup: cleanupWebSocket } = require('./config/websocket');
 
 const app = express();
 
 // Connect to database
 connectDB();
 
+// Create HTTP server and initialize WebSocket
+const server = initializeWebSocket(app);
+
 // Trust first proxy (if behind reverse proxy like Nginx)
 if (config.env === 'production') {
   app.set('trust proxy', 1);
 }
 
-// Security HTTP headers
-app.use(helmet());
+// Apply security middlewares
+app.use(security.baseHeaders);  // Helmet with CSP and other security headers
+app.use(security.cors);         // CORS configuration
+app.use(security.requestSizeLimiter); // Request size limits
 
-// Enable CORS with stricter defaults
-app.use(cors({
-  origin: config.security?.cors?.origin || ['http://localhost:3000'], // Array for multiple origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-  maxAge: 86400 // 24 hours
-}));
+// Apply rate limiters to specific routes
+app.use('/api/auth', security.rateLimiter.auth);
+app.use('/api/payments', security.rateLimiter.sensitive);
+app.use('/api', security.rateLimiter.api);
 
 // Compress responses
 app.use(compression());
@@ -38,21 +43,16 @@ app.use(compression());
 // Logging HTTP requests
 app.use(morgan(config.env === 'development' ? 'dev' : 'combined'));
 
-// Rate limiting (apply to API routes only)
-app.use('/api', rateLimiter);
-
-// Body parsing with stricter limits
-app.use(express.json({
-  limit: '100kb', // Reduced from 2mb for security
-  strict: true
-}));
-app.use(express.urlencoded({
-  extended: true,
-  limit: '100kb'
-}));
-
 // Custom request logging
 app.use(loggerMiddleware);
+
+// Additional security measures
+app.use(security.xssProtection);
+app.use(security.sqlInjection);
+
+// Health check routes (before rate limiting)
+app.use('/health', healthRoutes);
+app.use('/api/v1/health', healthRoutes);
 
 // Mount API routes
 app.use('/api/v1', apiRoutes); // Added versioning
@@ -63,7 +63,17 @@ app.use(notFound);
 // Centralized error handler
 app.use(errorHandler);
 
-module.exports = app;
+// Graceful shutdown handler
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received. Closing HTTP server...');
+  await cleanupWebSocket();
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+module.exports = { app, server };
 
 
 // backend/server.js or app.js

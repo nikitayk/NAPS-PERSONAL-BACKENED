@@ -123,10 +123,11 @@ const config = {
     cors: {
       origin: process.env.CORS_ORIGIN
         ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-        : ['http://localhost:3000'],
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        : ['http://localhost:3000', 'https://naps-personal.vercel.app'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
+      exposedHeaders: ['set-cookie'],
     },
     hsts: {
       maxAge: 31536000,
@@ -136,9 +137,10 @@ const config = {
     csp: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://naps-personal.vercel.app"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://naps-personal.vercel.app"],
+        imgSrc: ["'self'", "data:", "https:", "http:"],
+        connectSrc: ["'self'", "https://naps-personal.vercel.app", "ws://localhost:3000", "wss://naps-personal.vercel.app"],
       },
     },
   },

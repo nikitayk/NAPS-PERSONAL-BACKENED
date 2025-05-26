@@ -1,19 +1,36 @@
 const rateLimit = require('express-rate-limit');
+const RedisStore = require('rate-limit-redis');
+const Redis = require('ioredis');
+const config = require('../config/config');
 
-// General rate limiter configuration
-const rateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+let store;
+
+if (process.env.NODE_ENV === 'production' && config.redis.host) {
+  const redisClient = new Redis({
+    host: config.redis.host,
+    port: config.redis.port,
+    password: config.redis.password,
+  });
+
+  store = new RedisStore({
+    sendCommand: (...args) => redisClient.call(...args),
+  });
+}
+
+const limiter = rateLimit({
+  store: store,
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
   message: {
-    success: false,
-    message: 'Too many requests, please try again later.',
+    status: 'error',
+    message: 'Too many requests from this IP, please try again later.',
   },
-  standardHeaders: true, // Adds RateLimit-* headers
-  legacyHeaders: false,  // Disables X-RateLimit-* headers
-  statusCode: 429,
-  skipFailedRequests: false, // Count failed requests
-  skipSuccessfulRequests: false, // Count successful requests
-  keyGenerator: (req) => req.ip, // Identify client by IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for certain trusted sources if needed
+    return false;
+  },
 });
 
-module.exports = rateLimiter;
+module.exports = limiter;

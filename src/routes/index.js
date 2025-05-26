@@ -1,35 +1,37 @@
 const express = require('express');
 const router = express.Router();
 
-// Authentication routes
+// Core functionality routes
 router.use('/auth', require('./authRoutes'));
-
-// User management routes
 router.use('/users', require('./userRoutes'));
-
-// Transaction routes
 router.use('/transactions', require('./transactionRoutes'));
 
-// Forum routes
-router.use('/forums', require('./forumRoutes'));
+// Market and trading routes
+router.use('/stocks', require('./stockRoutes'));
+router.use('/market-data', require('./marketDataRoutes'));
 
-// Gamification routes
+// Payment and financial routes
+router.use('/payments', require('./paymentRoutes'));
+
+// Learning and practice routes
+router.use('/lessons', require('./lessonRoutes'));
+router.use('/practice', require('./practiceRoutes'));
+
+// Community and social routes
+router.use('/forums', require('./forumRoutes'));
 router.use('/gamification', require('./gamificationRoutes'));
 
-// Fraud detection routes
+// Security and analysis routes
 router.use('/fraud', require('./fraudRoutes'));
-
-// Analytics routes
 router.use('/analytics', require('./analyticsRoutes'));
 
-// Lessons routes
-router.use('/lessons', require('./lessonRoutes'));
-
+// AI assistance routes
 router.use('/assistant', require('./assistantRoutes'));
 
-
-// Practice routes (for scenarios, quizzes, challenges)
-router.use('/practice', require('./practiceRoutes'));
+// Health check route
+router.get('/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
 
 module.exports = router;
 
