@@ -12,8 +12,8 @@ const LearningService = require('./src/services/learningService');
 
 // Import middleware and routes
 const passport = require('passport');
-const paymentsRouter = require("./routes/payments");
-const { initializePassport, authenticateJwt } = require("./middleware/passport");
+const paymentRoutes = require("./src/routes/paymentRoutes");
+const { initializePassport, authenticateJwt } = require("./src/middlewares/passport");
 
 // Create Express app
 const app = express();
@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
 });
 
 // Mount routes
-app.use("/api/payments", paymentsRouter);
+app.use("/api/payments", paymentRoutes);
 
 // Protected route example
 app.get("/api/protected-route", authenticateJwt(), (req, res) => {
