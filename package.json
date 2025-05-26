@@ -17,7 +17,7 @@
     "format": "prettier --write .",
     "seed": "node scripts/seedDatabase.js",
     "migrate": "node scripts/migrate.js",
-    "build": "echo 'No build step required'",
+    "build": "npm ci --legacy-peer-deps",
     "heroku-postbuild": "echo 'No build step required'",
     "test:coverage": "jest --coverage",
     "test:websocket": "jest src/tests/websocket.test.js",
