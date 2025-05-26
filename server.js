@@ -1,6 +1,4 @@
 // server.js
-
-require("./workers/emailWorker");
 require('dotenv').config();
 
 const express = require('express');
@@ -12,8 +10,10 @@ const FraudDetectionService = require('./src/services/fraudDetectionService');
 const GamificationService = require('./src/services/gamificationService');
 const LearningService = require('./src/services/learningService');
 
-// Import middleware
+// Import middleware and routes
 const passport = require('passport');
+const paymentsRouter = require("./routes/payments");
+const { initializePassport, authenticateJwt } = require("./middleware/passport");
 
 // Create Express app
 const app = express();
@@ -27,7 +27,7 @@ app.use(cors({
 }));
 
 // Initialize passport
-app.use(passport.initialize());
+app.use(initializePassport());
 
 // Connect to MongoDB
 mongoose.connect(process.env.DATABASE_URI)
@@ -37,6 +37,14 @@ mongoose.connect(process.env.DATABASE_URI)
 // Basic route for testing
 app.get('/', (req, res) => {
   res.json({ message: 'NAPS Backend API is running' });
+});
+
+// Mount routes
+app.use("/api/payments", paymentsRouter);
+
+// Protected route example
+app.get("/api/protected-route", authenticateJwt(), (req, res) => {
+  res.json({ message: "You accessed a protected route", user: req.user });
 });
 
 // Error handling middleware
