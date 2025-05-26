@@ -12,7 +12,8 @@ const redis = new Redis(config.redis);
 // Rate limiting configuration
 const createLimiter = (options = {}) => rateLimit({
   store: new RedisStore({
-    sendCommand: (...args) => redis.call(...args),
+    client: redis,
+    prefix: 'rl:',
   }),
   windowMs: options.windowMs || config.rateLimit.windowMs,
   max: options.max || config.rateLimit.max,
