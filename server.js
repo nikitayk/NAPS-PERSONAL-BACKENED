@@ -5,19 +5,45 @@ require('dotenv').config();
 
 const express = require('express');
 const http = require('http');
+const cors = require('cors');
+const mongoose = require('mongoose');
 const WebSocketService = require('./src/services/websocketService');
 const FraudDetectionService = require('./src/services/fraudDetectionService');
 const GamificationService = require('./src/services/gamificationService');
 const LearningService = require('./src/services/learningService');
 
-// 1. Catch uncaught exceptions as early as possible (startup errors)
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  process.exit(1);
+// Import middleware
+const passport = require('passport');
+
+// Create Express app
+const app = express();
+
+// Basic middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'https://naps-personal-1ekp.vercel.app',
+  credentials: true
+}));
+
+// Initialize passport
+app.use(passport.initialize());
+
+// Connect to MongoDB
+mongoose.connect(process.env.DATABASE_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Basic route for testing
+app.get('/', (req, res) => {
+  res.json({ message: 'NAPS Backend API is running' });
 });
 
-// Import the Express app (all middleware, routes, and configs are set up in app.js)
-const app = require('./src/app');
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -38,7 +64,13 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Graceful shutdown on unhandled promise rejections
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
   server.close(() => process.exit(1));
