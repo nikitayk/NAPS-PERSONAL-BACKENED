@@ -23,7 +23,7 @@ const config = {
   // Core Application Configuration
   env: process.env.NODE_ENV || 'development',
   // Always use process.env.PORT (Railway sets this), fallback to 5000 locally
-  port: process.env.PORT ? parseInt(process.env.PORT, 10) : 5000,
+  port: process.env.PORT || 5000,
   baseUrl: process.env.BASE_URL || 'http://localhost:5000',
 
   // Database Configuration (MongoDB)
@@ -36,7 +36,7 @@ const config = {
 
   // Authentication & Security
   jwt: {
-    secret: process.env.JWT_SECRET || 'development_secret_change_in_production',
+    secret: process.env.JWT_SECRET || 'your-secret-key',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'development_refresh_secret',
     expiration: process.env.JWT_EXPIRATION || '15m',
     refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
@@ -151,6 +151,11 @@ const config = {
     port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,
     password: process.env.REDIS_PASSWORD,
   },
+
+  // New fields from the code block
+  mongoUri: process.env.DATABASE_URI,
+  corsOrigin: process.env.CORS_ORIGIN || 'https://naps-personal-1ekp.vercel.app',
+  openaiApiKey: process.env.OPENAI_API_KEY,
 };
 
 // Add proxy trust in production

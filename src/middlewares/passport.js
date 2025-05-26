@@ -1,11 +1,9 @@
-import passport from "passport";
-import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions } from "passport-jwt";
-import User from "../models/User"; // Adjust path to your User model
-import dotenv from "dotenv";
+const passport = require("passport");
+const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
+const User = require("../models/User"); // Adjust path to your User model
+require("dotenv").config();
 
-dotenv.config();
-
-const opts: StrategyOptions = {
+const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: process.env.JWT_SECRET || "your_jwt_secret", // Use env variable
 };
@@ -26,6 +24,11 @@ passport.use(
   })
 );
 
-export const initializePassport = () => passport.initialize();
+const initializePassport = () => passport.initialize();
 
-export const authenticateJwt = () => passport.authenticate("jwt", { session: false });
+const authenticateJwt = () => passport.authenticate("jwt", { session: false });
+
+module.exports = {
+  initializePassport,
+  authenticateJwt
+};
