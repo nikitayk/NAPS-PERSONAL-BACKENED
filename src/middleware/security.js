@@ -3,6 +3,8 @@ const rateLimit = require('express-rate-limit');
 const RedisStore = require('rate-limit-redis');
 const Redis = require('ioredis');
 const config = require('../config/config');
+const cors = require('cors');
+const express = require('express');
 
 // Initialize Redis client for rate limiting
 const redis = new Redis(config.redis);
@@ -19,27 +21,25 @@ const createLimiter = (options = {}) => rateLimit({
   legacyHeaders: false,
 });
 
+const corsOptions = {
+  origin: [
+    'https://naps-personal-1ekp.vercel.app',
+    'http://localhost:3000'  // Keep local development working
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Security middleware configuration
 const securityMiddleware = {
   // Basic security headers using helmet
-  baseHeaders: helmet({
-    contentSecurityPolicy: {
-      directives: config.security.csp.directives
-    },
-    crossOriginEmbedderPolicy: true,
-    crossOriginOpenerPolicy: true,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    dnsPrefetchControl: true,
-    frameguard: { action: 'deny' },
-    hidePoweredBy: true,
-    hsts: config.security.hsts,
-    ieNoOpen: true,
-    noSniff: true,
-    originAgentCluster: true,
-    permittedCrossDomainPolicies: true,
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-    xssFilter: true
-  }),
+  baseHeaders: (req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+  },
 
   // Rate limiting middleware
   rateLimiter: {
@@ -60,14 +60,7 @@ const securityMiddleware = {
   },
 
   // CORS configuration middleware
-  cors: require('cors')({
-    origin: config.security.cors.origin,
-    methods: config.security.cors.methods,
-    allowedHeaders: config.security.cors.allowedHeaders,
-    credentials: config.security.cors.credentials,
-    exposedHeaders: config.security.cors.exposedHeaders,
-    maxAge: 86400 // 24 hours
-  }),
+  cors: cors(corsOptions),
 
   // SQL injection protection
   sqlInjection: (req, res, next) => {
@@ -100,9 +93,7 @@ const securityMiddleware = {
   },
 
   // Request size limiter
-  requestSizeLimiter: require('express').json({ 
-    limit: '10kb' // Limit request size to 10kb
-  }),
+  requestSizeLimiter: express.json({ limit: '10mb' }),
 
   // JWT verification error handler
   jwtErrorHandler: (err, req, res, next) => {
