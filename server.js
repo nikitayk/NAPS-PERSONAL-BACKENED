@@ -1,4 +1,4 @@
-// server.js
+// server.js - Updated for Railway deployment
 require('dotenv').config();
 
 const express = require('express');
